@@ -1,4 +1,6 @@
 from pyline import Command, Query, CommandHandler, QueryHandler
+from .exceptions import HandlerNotFoundError
+
 
 
 class HandlerMediator:
@@ -11,6 +13,9 @@ class HandlerMediator:
         self.handlers[component] = handler
     
     async def send(self, component: Command | Query):
-        handler: CommandHandler | QueryHandler = self.handlers[component.__class__]
+        try:
+            handler: CommandHandler | QueryHandler = self.handlers[component.__class__]
+        except KeyError:
+            raise HandlerNotFoundError(f"No handler registered for {component.__class__.__name__}")
         return await handler.handle(component)
         
