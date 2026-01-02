@@ -12,10 +12,10 @@ class HandlerMediator:
     ):
         self.handlers[component] = handler
     
-    async def send(self, component: Command | Query):
+    def send(self, component: Command | Query):
         try:
             handler: CommandHandler | QueryHandler = self.handlers[component.__class__]
         except KeyError:
             raise HandlerNotFoundError(f"No handler registered for {component.__class__.__name__}")
-        return await handler.handle(component)
+        return handler.handle(component)
         
