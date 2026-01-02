@@ -7,5 +7,5 @@ class Command(ABC):
 
 class CommandHandler(ABC):
     @abstractmethod
-    def handle(self, command: Command) -> None:
+    async def handle(self, command: Command) -> None:
         pass

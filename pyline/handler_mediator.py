@@ -10,7 +10,7 @@ class HandlerMediator:
     ):
         self.handlers[component.__name__] = handler
     
-    def send(self, component: Command | Query):
+    async def send(self, component: Command | Query):
         handler: CommandHandler | QueryHandler = self.handlers[component.__class__.__name__]
-        return handler.handle(component)
+        return await handler.handle(component)
         

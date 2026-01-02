@@ -18,11 +18,11 @@ class Pipe(ABC):
         params = (self.context[key] for key in step_keys if key in self.context)
         return params
 
-    def run(self):
+    async def run(self):
         print(f"Running pipe: {self.name}")
         for idx, step in enumerate(self.steps):
             print(f"Running step {idx + 1} of {len(self.steps)}")
-            result = mediator.send(step(*self.context_to_params(step)))
+            result = await mediator.send(step(*self.context_to_params(step)))
             if result != None:
                 self.context.update(result.__dict__)
             print(f"Step {idx + 1} completed.")

@@ -11,5 +11,5 @@ class QueryResult(ABC):
 
 class QueryHandler(ABC):
     @abstractmethod
-    def handle(self, query: Query) -> QueryResult:
+    async def handle(self, query: Query) -> QueryResult:
         pass
