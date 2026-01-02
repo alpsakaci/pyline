@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyline-core",
-    version="2.0.0",
+    version="2.1.0",
     packages=find_packages(),
     author="Alp Sakaci",
     author_email="alp@alpsakaci.com",
