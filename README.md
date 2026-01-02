@@ -12,6 +12,7 @@ PyLine Core provides a clean architecture for building applications using the CQ
 - **Query Pattern**: Dedicated query objects with result types
 - **Mediator Pattern**: Centralized handler registration and execution
 - **Pipeline Orchestration**: Chain commands and queries in sequential workflows
+- **Async Support**: Native asyncio support for high-performance I/O operations
 - **Type Safety**: Built with Python type hints for better IDE support
 - **Minimal Dependencies**: Lightweight with no external dependencies
 
@@ -34,7 +35,7 @@ class CreateUserCommand(Command):
     name: str
 
 class CreateUserCommandHandler(CommandHandler):
-    def handle(self, command: CreateUserCommand):
+    async def handle(self, command: CreateUserCommand):
         print(f"Creating user: {command.name}")
         # Your business logic here
 ```
@@ -55,7 +56,7 @@ class GetUserByNameQueryResult(QueryResult):
     email: str
 
 class GetUserByNameQueryHandler(QueryHandler):
-    def handle(self, query: GetUserByNameQuery):
+    async def handle(self, query: GetUserByNameQuery):
         # Your data access logic here
         return GetUserByNameQueryResult(
             user={"id": 1, "name": query.name, "email": "user@example.com"},
@@ -75,14 +76,20 @@ mediator.register_handler(GetUserByNameQuery, GetUserByNameQueryHandler())
 ### 4. Execute Commands and Queries
 
 ```python
-# Execute a command
-command = CreateUserCommand(name="John Doe")
-mediator.send(command)
+import asyncio
 
-# Execute a query
-query = GetUserByNameQuery(name="John Doe")
-result = mediator.send(query)
-print(f"User email: {result.email}")
+async def main():
+    # Execute a command
+    command = CreateUserCommand(name="John Doe")
+    await mediator.send(command)
+
+    # Execute a query
+    query = GetUserByNameQuery(name="John Doe")
+    result = await mediator.send(query)
+    print(f"User email: {result.email}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 ## Pipeline Orchestration
@@ -106,7 +113,12 @@ create_user_pipe = Pipe(
 )
 
 # Execute the pipeline
-create_user_pipe.run()
+async def main():
+    await create_user_pipe.run()
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
 ```
 
 ### Pipeline Features

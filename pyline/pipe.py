@@ -3,6 +3,9 @@ from dataclasses import fields
 from pyline.command import Command
 from pyline.query import Query
 from pyline import mediator
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Pipe(ABC):
 
@@ -15,15 +18,15 @@ class Pipe(ABC):
 
     def context_to_params(self, step: Command | Query):
         step_keys = [f.name for f in fields(step)]
-        params = (self.context[key] for key in step_keys if key in self.context)
+        params = {key: self.context[key] for key in step_keys if key in self.context}
         return params
 
     async def run(self):
-        print(f"Running pipe: {self.name}")
+        logger.info(f"Running pipe: {self.name}")
         for idx, step in enumerate(self.steps):
-            print(f"Running step {idx + 1} of {len(self.steps)}")
-            result = await mediator.send(step(*self.context_to_params(step)))
+            logger.info(f"Running step {idx + 1} of {len(self.steps)}")
+            result = await mediator.send(step(**self.context_to_params(step)))
             if result != None:
                 self.context.update(result.__dict__)
-            print(f"Step {idx + 1} completed.")
-        print(f"Pipe {self.name} completed.")
+            logger.info(f"Step {idx + 1} completed.")
+        logger.info(f"Pipe {self.name} completed.")
