@@ -1,11 +1,11 @@
 class PyLineError(Exception):
-    """Base exception for PyLine framework."""
+    """Base exception for all PyLine framework errors."""
     pass
 
 class HandlerNotFoundError(PyLineError):
-    """Raised when a handler is not found for a command or query."""
+    """Raised when a handler cannot be found for a given command or query type."""
     pass
 
 class PipelineError(PyLineError):
-    """Raised when a pipeline configuration or execution fails."""
+    """Raised when a pipeline configuration is invalid or execution fails."""
     pass
