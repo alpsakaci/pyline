@@ -1,5 +1,6 @@
 from abc import ABC
 from dataclasses import fields, is_dataclass
+from typing import Any
 from pyline.command import Command
 from pyline.query import Query
 from pyline import mediator as default_mediator
@@ -18,7 +19,7 @@ class Pipe(ABC):
     """
 
     def __init__(
-        self, name: str, context: any, steps: list[Command | Query], mediator: HandlerMediator = None
+        self, name: str, context: dict[str, Any], steps: list[type[Command | Query]], mediator: HandlerMediator = None
     ):
         """
         Initializes a new Pipe.
@@ -30,12 +31,12 @@ class Pipe(ABC):
             mediator (HandlerMediator, optional): The mediator instance to use. 
                                                   Defaults to the global mediator.
         """
-        self.context: dict = context
+        self.context: dict[str, Any] = context
         self.name: str = name
-        self.steps: list[Command | Query] = steps
+        self.steps: list[type[Command | Query]] = steps
         self.mediator = mediator or default_mediator
 
-    def context_to_params(self, step: Command | Query):
+    def context_to_params(self, step: type[Command | Query]) -> dict[str, Any]:
         """
         Maps context data to the parameters of a step (dataclass).
 

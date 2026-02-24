@@ -1,3 +1,4 @@
+from typing import Any, overload
 from pyline import Command, Query, CommandHandler, QueryHandler
 from .exceptions import HandlerNotFoundError
 
@@ -25,7 +26,13 @@ class HandlerMediator:
         """
         self.handlers[component] = handler
     
-    async def send(self, component: Command | Query):
+    @overload
+    async def send(self, component: Command) -> None: ...
+
+    @overload
+    async def send(self, component: Query) -> Any: ...
+
+    async def send(self, component: Command | Query) -> Any:
         """
         Sends a command or query to its registered handler.
 

@@ -108,3 +108,4 @@ venv/
 
 # PyInstaller
 dist/
+htmlcov/
