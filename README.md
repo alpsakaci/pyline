@@ -147,25 +147,6 @@ if __name__ == "__main__":
 - **Mediator Pattern**: Centralizes communication between components
 - **Pipeline Pattern**: Orchestrates sequential execution of operations
 
-### Architecture Flow
-
-```mermaid
-graph TD
-    Client([Client / API]) -->|Starts Workflow| Context[{Shared Context}]
-    Client -->|Triggers| P[Pipe Orchestrator]
-    
-    P --> |Step 1: Extracts Params| C[Command / Query]
-    P --> |Step 2: Sends to Mediator| M{Handler Mediator}
-    
-    M --> |Resolves Handler| H[CommandHandler / QueryHandler]
-    H --> |Executes Logic| DB[(Data Layer)]
-    
-    H -.-> |Returns Result| P
-    P -.-> |Updates Context| Context
-    
-    P --> |Next Step| C2[Next Command / Query]
-```
-
 ## Requirements
 
 - Python 3.10+
