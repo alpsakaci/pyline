@@ -66,7 +66,7 @@ class Pipe(ABC):
         for idx, step in enumerate(self.steps):
             logger.info(f"Running step {idx + 1} of {len(self.steps)}")
             result = await self.mediator.send(step(**self.context_to_params(step)))
-            if result != None:
+            if result is not None:
                 self.context.update(result.__dict__)
             logger.info(f"Step {idx + 1} completed.")
         logger.info(f"Pipe {self.name} completed.")

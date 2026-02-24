@@ -101,3 +101,47 @@ async def test_pipe_uses_default_mediator():
     await pipe.run()
     
     assert context["out"] == 42
+
+
+@pytest.mark.asyncio
+async def test_pipe_logging(mediator: HandlerMediator, caplog):
+    import logging
+    caplog.set_level(logging.INFO)
+    context: dict[str, Any] = {"val": 10}
+    
+    @dataclass
+    class LogQuery(Query):
+        val: int
+        
+    class LogQueryHandler(QueryHandler):
+        async def handle(self, query: LogQuery) -> None: # QueryResult should really be returned, but None tests the if result is not None branch
+            return None
+            
+    mediator.register_handler(LogQuery, LogQueryHandler())
+    
+    pipe = Pipe("LogPipe", context, [LogQuery], mediator=mediator)
+    await pipe.run()
+    
+    assert "Running pipe: LogPipe" in caplog.text
+    assert "Running step 1 of 1" in caplog.text
+    assert "Step 1 completed." in caplog.text
+    assert "Pipe LogPipe completed." in caplog.text
+
+@pytest.mark.asyncio
+async def test_pipe_missing_context_param(mediator: HandlerMediator):
+    @dataclass
+    class MissingParamQuery(Query):
+        required_val: int
+        
+    class MissingParamQueryHandler(QueryHandler):
+        async def handle(self, query: MissingParamQuery) -> None:
+            return None
+            
+    mediator.register_handler(MissingParamQuery, MissingParamQueryHandler())
+    
+    context: dict[str, Any] = {} # Missing 'required_val'
+    pipe = Pipe("MissingParamPipe", context, [MissingParamQuery], mediator=mediator)
+    
+    with pytest.raises(TypeError): # dataclass instantiation will fail
+        await pipe.run()
+
