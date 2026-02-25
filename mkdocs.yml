@@ -15,4 +15,5 @@ plugins:
 nav:
   - Home: index.md
   - Usage Guide: usage.md
+  - Architecture: architecture.md
   - API Reference: api.md
