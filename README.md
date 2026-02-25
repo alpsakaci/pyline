@@ -1,33 +1,31 @@
 # PyLine Core
 
+[![CI](https://github.com/alpsakaci/pyline/actions/workflows/ci.yml/badge.svg)](https://github.com/alpsakaci/pyline/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+
 A lightweight Python framework for implementing the Command Query Responsibility Segregation (CQRS) pattern with pipeline orchestration capabilities.
 
-## Overview
+## 🚀 Key Features
 
-PyLine Core provides a clean architecture for building applications using the CQRS pattern, where commands and queries are separated, and handlers are managed through a mediator pattern. The framework also includes a pipeline system for orchestrating complex workflows.
+- **CQRS Implementation**: Strong separation between Commands (write) and Queries (read).
+- **Mediator Pattern**: Decouple components with a centralized handler registration.
+- **Pipeline Orchestration**: Execute sequences of steps with a shared context and automatic parameter mapping.
+- **Type-Safe**: Modern Python type hints with `@overload` support for superior developer experience.
+- **Micro-Framework**: Ultra-lightweight with zero external dependencies in core.
 
-## Features
-
-- **Command Pattern**: Separate command objects from their handlers
-- **Query Pattern**: Dedicated query objects with result types
-- **Mediator Pattern**: Centralized handler registration and execution
-- **Pipeline Orchestration**: Chain commands and queries in sequential workflows
-- **Async Support**: Native asyncio support for high-performance I/O operations
-- **Type Safety**: Built with Python type hints for better IDE support
-- **Minimal Dependencies**: Lightweight with no external dependencies
-
-## Installation
+## 📦 Installation
 
 ```bash
 pip install pyline-core
 ```
 
-## Quick Start
+## 🚥 Quick Start
 
-### 1. Define Commands and Handlers
+### 1. Define Components
 
 ```python
-from pyline import Command, CommandHandler
+from pyline import Command, Query, CommandHandler, QueryHandler
 from dataclasses import dataclass
 
 @dataclass
@@ -35,131 +33,58 @@ class CreateUserCommand(Command):
     name: str
 
 class CreateUserCommandHandler(CommandHandler):
-    async def handle(self, command: CreateUserCommand):
+    async def handle(self, command: CreateUserCommand) -> None:
         print(f"Creating user: {command.name}")
-        # Your business logic here
-```
-
-### 2. Define Queries and Handlers
-
-```python
-from pyline import Query, QueryResult, QueryHandler
-from dataclasses import dataclass
 
 @dataclass
-class GetUserByNameQuery(Query):
+class GetUserQuery(Query):
     name: str
 
-@dataclass
-class GetUserByNameQueryResult(QueryResult):
-    user: dict
-    email: str
-
-class GetUserByNameQueryHandler(QueryHandler):
-    async def handle(self, query: GetUserByNameQuery):
-        # Your data access logic here
-        return GetUserByNameQueryResult(
-            user={"id": 1, "name": query.name, "email": "user@example.com"},
-            email="user@example.com"
-        )
+class GetUserQueryHandler(QueryHandler):
+    async def handle(self, query: GetUserQuery):
+        return {"id": 1, "name": query.name}
 ```
 
-### 3. Register Handlers
+### 2. Register and Execute
 
 ```python
 from pyline import mediator
 
+# Registration
 mediator.register_handler(CreateUserCommand, CreateUserCommandHandler())
-mediator.register_handler(GetUserByNameQuery, GetUserByNameQueryHandler())
-```
+mediator.register_handler(GetUserQuery, GetUserQueryHandler())
 
-### 4. Execute Commands and Queries
-
-```python
-import asyncio
-
+# Execution
 async def main():
-    # Execute a command
-    command = CreateUserCommand(name="John Doe")
-    await mediator.send(command)
-
-    # Execute a query
-    query = GetUserByNameQuery(name="John Doe")
-    result = await mediator.send(query)
-    print(f"User email: {result.email}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    await mediator.send(CreateUserCommand(name="Alp"))
+    user = await mediator.send(GetUserQuery(name="Alp"))
+    print(user)
 ```
 
-## Pipeline Orchestration
+## 🛠 Advanced: Pipeline Orchestration
 
-PyLine Core includes a powerful pipeline system for orchestrating complex workflows:
+Chain multiple commands and queries into a single workflow with shared context:
 
 ```python
 from pyline.pipe import Pipe
 
-# Define a pipeline
-create_user_pipe = Pipe(
-    name="Create User Pipeline",
-    context={
-        "name": "John Doe",
-    },
-    steps=[
-        CreateUserCommand,
-        GetUserByNameQuery,
-        # Add more commands/queries as needed
-    ],
+pipe = Pipe(
+    name="Registration Flow",
+    context={"name": "John Doe"},
+    steps=[CreateUserCommand, GetUserQuery]
 )
 
-# Execute the pipeline
-async def main():
-    await create_user_pipe.run()
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+await pipe.run()
 ```
 
-### Pipeline Features
+## 📖 Documentation
 
-- **Context Sharing**: Data flows between pipeline steps through a shared context
-- **Automatic Parameter Mapping**: Pipeline automatically maps context data to command/query parameters
-- **Result Propagation**: Query results are automatically added to the context for subsequent steps
-- **Step Tracking**: Built-in logging shows progress through pipeline execution
+For detailed guides and full API reference, visit our documentation site (coming soon).
 
-## Architecture
+## 🤝 Contributing
 
-### Core Components
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for local development setup and standards.
 
-1. **Command**: Abstract base class for commands
-2. **CommandHandler**: Abstract base class for command handlers
-3. **Query**: Abstract base class for queries
-4. **QueryResult**: Abstract base class for query results
-5. **QueryHandler**: Abstract base class for query handlers
-6. **HandlerMediator**: Central registry and dispatcher for handlers
-7. **Pipe**: Pipeline orchestration system
+## 📄 License
 
-### Design Patterns
-
-- **Command Pattern**: Encapsulates requests as objects
-- **Query Pattern**: Separates read operations from write operations
-- **Mediator Pattern**: Centralizes communication between components
-- **Pipeline Pattern**: Orchestrates sequential execution of operations
-
-## Requirements
-
-- Python 3.10+
-
-## License
-
-This project is licensed under the terms specified in the LICENSE file.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Author
-
-**Alp Sakaci**  
-Email: alp@alpsakaci.com
+MIT. See [LICENSE](LICENSE) for details.

@@ -1,0 +1,18 @@
+site_name: PyLine Core
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: indigo
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+
+nav:
+  - Home: index.md
+  - Usage Guide: usage.md
+  - API Reference: api.md
