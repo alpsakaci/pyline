@@ -19,7 +19,7 @@ class Pipe(ABC):
     """
 
     def __init__(
-        self, name: str, context: dict[str, Any], steps: list[type[Command | Query]], mediator: HandlerMediator = None
+        self, name: str, context: dict[str, Any], steps: list[type[Command | Query]], mediator: HandlerMediator | None = None
     ):
         """
         Initializes a new Pipe.
@@ -56,7 +56,7 @@ class Pipe(ABC):
         params = {key: self.context[key] for key in step_keys if key in self.context}
         return params
 
-    async def run(self):
+    async def run(self) -> None:
         """
         Executes the pipeline steps sequentially.
         

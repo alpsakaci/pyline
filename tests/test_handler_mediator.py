@@ -61,3 +61,13 @@ async def test_send_unregistered_component_raises_error(mediator: HandlerMediato
         await mediator.send(cmd)
     
     assert "No handler registered for UnregisteredCommand" in str(exc_info.value)
+
+@pytest.mark.asyncio
+async def test_send_incompatible_handler_raises_error(mediator: HandlerMediator):
+    # Registering a Command with a QueryHandler (shouldn't happen in normal use but covered for safety)
+    mediator.register_handler(DummyCommand, DummyQueryHandler()) # type: ignore
+    
+    with pytest.raises(HandlerNotFoundError) as exc_info:
+        await mediator.send(DummyCommand(data="test"))
+        
+    assert "Incompatible handler for DummyCommand" in str(exc_info.value)

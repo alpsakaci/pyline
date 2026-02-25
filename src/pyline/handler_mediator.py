@@ -11,12 +11,12 @@ class HandlerMediator:
     Acts as a central registry where Commands and Queries are mapped to their
     respective Handlers.
     """
-    def __init__(self):
-        self.handlers = {}
+    def __init__(self) -> None:
+        self.handlers: dict[type[Command | Query], CommandHandler | QueryHandler] = {}
 
     def register_handler(
         self, component: type[Command | Query], handler: CommandHandler | QueryHandler
-    ):
+    ) -> None:
         """
         Registers a handler for a specific command or query type.
 
@@ -49,5 +49,9 @@ class HandlerMediator:
             handler: CommandHandler | QueryHandler = self.handlers[component.__class__]
         except KeyError:
             raise HandlerNotFoundError(f"No handler registered for {component.__class__.__name__}")
-        return await handler.handle(component)
+        if isinstance(component, Command) and isinstance(handler, CommandHandler):
+            return await handler.handle(component)
+        if isinstance(component, Query) and isinstance(handler, QueryHandler):
+            return await handler.handle(component)
+        raise HandlerNotFoundError(f"Incompatible handler for {component.__class__.__name__}")
         
