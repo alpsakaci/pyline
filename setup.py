@@ -2,8 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyline-core",
-    version="2.2.0",
-    packages=find_packages(),
+    version="2.2.1",
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     author="Alp Sakaci",
     author_email="alp@alpsakaci.com",
     description="pyline core",
