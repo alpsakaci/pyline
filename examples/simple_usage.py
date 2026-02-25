@@ -1,6 +1,7 @@
-from pyline import Command, CommandHandler
-from dataclasses import dataclass
 import asyncio
+from dataclasses import dataclass
+from pyline import Query, QueryResult, QueryHandler, Command, CommandHandler, mediator
+
 
 @dataclass
 class CreateUserCommand(Command):
@@ -12,10 +13,6 @@ class CreateUserCommandHandler(CommandHandler):
         await asyncio.sleep(1)
         print("User created")
         # Your business logic here
-
-
-from pyline import Query, QueryResult, QueryHandler
-from dataclasses import dataclass
 
 @dataclass
 class GetUserByNameQuery(Query):
@@ -35,26 +32,20 @@ class GetUserByNameQueryHandler(QueryHandler):
             email="user@example.com"
         )
 
-from pyline import mediator
 
 mediator.register_handler(CreateUserCommand, CreateUserCommandHandler())
 mediator.register_handler(GetUserByNameQuery, GetUserByNameQueryHandler())
 
 
-import asyncio
-
 async def main():
     # Execute a command
-    tasks = []
     command = CreateUserCommand(name="John Doe")
-    tasks.append(mediator.send(command))
+    await mediator.send(command)
 
     # Execute a query
     query = GetUserByNameQuery(name="John Doe")
-    tasks.append(mediator.send(query))
-
-    create_user_result, get_user_result = await asyncio.gather(*tasks)
-    print(get_user_result)
+    result = await mediator.send(query)
+    print(result)
 
 if __name__ == "__main__":
     asyncio.run(main())
