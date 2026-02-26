@@ -87,3 +87,32 @@ await pipe.run()
 
 ### Automatic Result Propagation
 If a step returns a result (like `GetUserQuery`), that result (if it's a dataclass or dict) is automatically merged into the pipeline's `context`. Subsequent steps can then use these new values.
+
+## 5. Event-Driven Architecture (Event Bus)
+
+PyLine Core includes a lightweight `EventBus` to decouple components and handle side-effects asynchronously without blocking the main execution.
+
+```python
+from pyline import BaseEvent, EventHandler, EventBus
+from dataclasses import dataclass
+import asyncio
+
+@dataclass(frozen=True, kw_only=True)
+class UserCreatedEvent(BaseEvent):
+    user_id: int
+    name: str
+
+class EmailNotificationHandler(EventHandler[UserCreatedEvent]):
+    async def handle(self, event: UserCreatedEvent) -> None:
+        print(f"Sending welcome email to User {event.user_id} ({event.name})")
+
+async def run_event_bus():
+    bus = EventBus()
+    bus.subscribe(UserCreatedEvent, EmailNotificationHandler())
+    
+    # Publish event (runs in the background)
+    bus.publish(UserCreatedEvent(user_id=1, name="Alp"))
+    
+    # Gracefully shut down and wait for all background tasks
+    await bus.shutdown()
+```

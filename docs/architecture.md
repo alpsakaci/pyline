@@ -23,6 +23,16 @@ Each pipeline run has its own isolated `context`. This ensures that concurrent p
 ### Parameter Mapping Strategy
 PyLine uses Python's `dataclasses.fields` to inspect the requirements of each step. It then safely extracts matching keys from the pipeline context. This prevents "prop drilling" where you have to manually pass every parameter through a chain of functions.
 
+## Event-Driven Architecture (Publish/Subscribe)
+
+The `EventBus` provides a mechanism for decoupling components via asynchronous events. 
+
+### Background Execution
+When an event is published via `bus.publish()`, registered `EventHandler`s are executed in background tasks using `asyncio.create_task()`. This ensures that publishing an event never blocks the main execution flow, making it ideal for side-effects like sending emails or tracking metrics.
+
+### Graceful Shutdown
+The event bus tracks pending background tasks and provides a `shutdown()` method to "drain" these tasks, with optional timeout support. This ensures your application can exit cleanly without losing critical background events.
+
 ## Type Safety & Overloads
 
 PyLine heavily uses Python's typing system. The `mediator.send` method uses `@overload` to provide precise return types:

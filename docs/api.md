@@ -10,6 +10,14 @@ This page provides an automatically generated reference of the PyLine Core API.
 
 ::: pyline.pipe.Pipe
 
+## Event Bus
+
+::: pyline.event_bus.EventBus
+
+::: pyline.base_event.BaseEvent
+
+::: pyline.event_handler.EventHandler
+
 ## Base Components
 
 ### Command
