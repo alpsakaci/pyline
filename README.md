@@ -11,6 +11,7 @@ A lightweight Python framework for implementing the Command Query Responsibility
 - **CQRS Implementation**: Strong separation between Commands (write) and Queries (read).
 - **Mediator Pattern**: Decouple components with a centralized handler registration.
 - **Pipeline Orchestration**: Execute sequences of steps with a shared context and automatic parameter mapping.
+- **Event-Driven Architecture**: Powerful background `EventBus` with Publish/Subscribe support and graceful shutdown.
 - **Type-Safe**: Modern Python type hints with `@overload` support for superior developer experience.
 - **Micro-Framework**: Ultra-lightweight with zero external dependencies in core.
 
@@ -75,6 +76,38 @@ pipe = Pipe(
 )
 
 await pipe.run()
+```
+
+## 📻 Event-Driven Architecture (Event Bus)
+
+PyLine Core includes a lightweight `EventBus` to decouple components and handle side-effects asynchronously without blocking the main execution:
+
+```python
+from pyline import BaseEvent, EventHandler, EventBus
+from dataclasses import dataclass
+import asyncio
+
+@dataclass(frozen=True, kw_only=True)
+class UserCreatedEvent(BaseEvent):
+    user_id: int
+    name: str
+
+class EmailNotificationHandler(EventHandler[UserCreatedEvent]):
+    async def handle(self, event: UserCreatedEvent) -> None:
+        print(f"Sending welcome email to User {event.user_id} ({event.name})")
+
+async def main():
+    bus = EventBus()
+    bus.subscribe(UserCreatedEvent, EmailNotificationHandler())
+    
+    # Publish event (runs in the background)
+    bus.publish(UserCreatedEvent(user_id=1, name="Alp"))
+    
+    # Gracefully shut down and wait for all background tasks
+    await bus.shutdown()
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 ## 📖 Documentation

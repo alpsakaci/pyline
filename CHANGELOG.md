@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [3.0.0] - 2026-02-26
+### Added
+- Background `EventBus` implementation using the Publish/Subscribe pattern.
+- `BaseEvent` and `EventHandler` abstract base classes.
+- Graceful shutdown and nested event handling capabilities for the Event Bus.
+- Package version updated to `3.0.0`.
+
 
 ## [2.2.1] - 2026-02-25
 ### Changed
