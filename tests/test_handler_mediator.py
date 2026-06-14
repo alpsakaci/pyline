@@ -71,3 +71,32 @@ async def test_send_incompatible_handler_raises_error(mediator: HandlerMediator)
         await mediator.send(DummyCommand(data="test"))
         
     assert "Incompatible handler for DummyCommand" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_register_decorator(mediator: HandlerMediator):
+    @mediator.register(DummyCommand)
+    class DecoratedHandler(CommandHandler):
+        def __init__(self):
+            self.called = False
+        async def handle(self, command: DummyCommand) -> None:
+            self.called = True
+            
+    cmd = DummyCommand(data="decorator_test")
+    handler = mediator.handlers[DummyCommand]
+    assert isinstance(handler, DecoratedHandler)
+    
+    await mediator.send(cmd)
+    assert handler.called is True
+
+
+@pytest.mark.asyncio
+async def test_register_decorator_non_class(mediator: HandlerMediator):
+    handler = DummyCommandHandler()
+    decorator = mediator.register(DummyCommand)
+    decorated = decorator(handler)
+    
+    assert decorated is handler
+    assert mediator.handlers[DummyCommand] is handler
+
+

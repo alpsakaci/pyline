@@ -33,6 +33,7 @@ class EventBus:
     def publish(self, event: BaseEvent) -> None:
         """
         Publishes an event to all registered subscribers in the background.
+        Supports triggering handlers subscribed to parent classes of the event.
 
         Args:
             event (BaseEvent): The event instance to publish.
@@ -42,11 +43,20 @@ class EventBus:
             return
 
         event_type = type(event)
-        if event_type in self._subscribers:
-            for handler in self._subscribers[event_type]:
-                task = asyncio.create_task(self._run_handler(handler, event))
-                self._background_tasks.add(task)
-                task.add_done_callback(self._background_tasks.discard)
+        handlers_to_run = []
+        seen_handlers = set()
+
+        for registered_type, handlers in self._subscribers.items():
+            if issubclass(event_type, registered_type):
+                for handler in handlers:
+                    if handler not in seen_handlers:
+                        seen_handlers.add(handler)
+                        handlers_to_run.append(handler)
+
+        for handler in handlers_to_run:
+            task = asyncio.create_task(self._run_handler(handler, event))
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
 
     async def shutdown(self, timeout: float | None = None) -> None:
         """

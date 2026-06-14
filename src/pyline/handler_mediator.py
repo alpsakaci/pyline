@@ -1,7 +1,8 @@
-from typing import Any, overload
+from typing import Any, overload, TypeVar
 from pyline import Command, Query, CommandHandler, QueryHandler
 from .exceptions import HandlerNotFoundError
 
+TResult = TypeVar("TResult")
 
 
 class HandlerMediator:
@@ -12,10 +13,12 @@ class HandlerMediator:
     respective Handlers.
     """
     def __init__(self) -> None:
-        self.handlers: dict[type[Command | Query], CommandHandler | QueryHandler] = {}
+        self.handlers: dict[type[Command | Query[Any]], CommandHandler | QueryHandler[Any, Any]] = {}
 
     def register_handler(
-        self, component: type[Command | Query], handler: CommandHandler | QueryHandler
+        self,
+        component: type[Command | Query[Any]],
+        handler: CommandHandler | QueryHandler[Any, Any],
     ) -> None:
         """
         Registers a handler for a specific command or query type.
@@ -25,14 +28,33 @@ class HandlerMediator:
             handler (CommandHandler | QueryHandler): The handler instance to register.
         """
         self.handlers[component] = handler
+
+    def register(self, component: type[Command | Query[Any]]) -> Any:
+        """
+        A decorator to register a handler for a specific command or query type.
+
+        Args:
+            component (type[Command | Query]): The class of the command or query.
+
+        Returns:
+            A decorator function that registers the handler.
+        """
+        def decorator(handler: Any) -> Any:
+            if isinstance(handler, type):
+                instance = handler()
+                self.register_handler(component, instance)
+            else:
+                self.register_handler(component, handler)
+            return handler
+        return decorator
     
     @overload
     async def send(self, component: Command) -> None: ...
 
     @overload
-    async def send(self, component: Query) -> Any: ...
+    async def send(self, component: Query[TResult]) -> TResult: ...
 
-    async def send(self, component: Command | Query) -> Any:
+    async def send(self, component: Command | Query[Any]) -> Any:
         """
         Sends a command or query to its registered handler.
 
@@ -46,7 +68,7 @@ class HandlerMediator:
             HandlerNotFoundError: If no handler is registered for the component type.
         """
         try:
-            handler: CommandHandler | QueryHandler = self.handlers[component.__class__]
+            handler = self.handlers[component.__class__]
         except KeyError:
             raise HandlerNotFoundError(f"No handler registered for {component.__class__.__name__}")
         if isinstance(component, Command) and isinstance(handler, CommandHandler):

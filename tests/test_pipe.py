@@ -142,6 +142,72 @@ async def test_pipe_missing_context_param(mediator: HandlerMediator):
     context: dict[str, Any] = {} # Missing 'required_val'
     pipe = Pipe("MissingParamPipe", context, [MissingParamQuery], mediator=mediator)
     
-    with pytest.raises(TypeError): # dataclass instantiation will fail
+    with pytest.raises(PipelineError) as exc_info:
         await pipe.run()
+    assert "is missing required parameters in context: required_val" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_pipe_different_result_types(mediator: HandlerMediator):
+    # 1. Dict result
+    @dataclass
+    class DictQuery(Query):
+        val: int
+    class DictQueryHandler(QueryHandler):
+        async def handle(self, query: DictQuery) -> dict:
+            return {"dict_val": query.val + 1}
+            
+    # 2. Slots result
+    class SlotsResult:
+        __slots__ = ["slots_val"]
+        def __init__(self, slots_val):
+            self.slots_val = slots_val
+            
+    @dataclass
+    class SlotsQuery(Query):
+        val: int
+    class SlotsQueryHandler(QueryHandler):
+        async def handle(self, query: SlotsQuery) -> SlotsResult:
+            return SlotsResult(slots_val=query.val + 2)
+
+    # 3. Standard result with __dict__
+    class StandardResult:
+        def __init__(self, dict_object_val):
+            self.dict_object_val = dict_object_val
+            
+    @dataclass
+    class StandardQuery(Query):
+        val: int
+    class StandardQueryHandler(QueryHandler):
+        async def handle(self, query: StandardQuery) -> StandardResult:
+            return StandardResult(dict_object_val=query.val + 3)
+
+    # 4. Unsupported result type
+    @dataclass
+    class UnsupportedQuery(Query):
+        pass
+    class UnsupportedQueryHandler(QueryHandler):
+        async def handle(self, query: UnsupportedQuery) -> list:
+            return [1, 2, 3] # List is unsupported
+
+    mediator.register_handler(DictQuery, DictQueryHandler())
+    mediator.register_handler(SlotsQuery, SlotsQueryHandler())
+    mediator.register_handler(StandardQuery, StandardQueryHandler())
+    mediator.register_handler(UnsupportedQuery, UnsupportedQueryHandler())
+    
+    # Run pipeline with dict, slots, and standard __dict__ object
+    context = {"val": 10}
+    pipe = Pipe("ResultTypesPipe", context, [DictQuery, SlotsQuery, StandardQuery], mediator=mediator)
+    await pipe.run()
+    
+    assert context["dict_val"] == 11
+    assert context["slots_val"] == 12
+    assert context["dict_object_val"] == 13
+    
+    # Run pipeline with unsupported result type
+    pipe_err = Pipe("ErrorPipe", {}, [UnsupportedQuery], mediator=mediator)
+    with pytest.raises(PipelineError) as exc_info:
+        await pipe_err.run()
+    assert "returned an unsupported result type" in str(exc_info.value)
+
 

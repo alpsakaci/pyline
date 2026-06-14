@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
+from typing import Any, Generic, TypeVar
+
+TResult = TypeVar("TResult")
+TQuery = TypeVar("TQuery", bound="Query[Any]")
 
 
-class Query(ABC):
+class Query(Generic[TResult], ABC):
     """Abstract base class for all queries."""
     pass
 
@@ -11,18 +15,18 @@ class QueryResult(ABC):
     pass
 
 
-class QueryHandler(ABC):
+class QueryHandler(Generic[TQuery, TResult], ABC):
     """Abstract base class for query handlers."""
 
     @abstractmethod
-    async def handle(self, query: Query) -> QueryResult:
+    async def handle(self, query: TQuery) -> TResult:
         """
         Handles the execution of a query.
 
         Args:
-            query (Query): The query to handle.
+            query (TQuery): The query to handle.
 
         Returns:
-            QueryResult: The result of the query.
+            TResult: The result of the query.
         """
         pass
