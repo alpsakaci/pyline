@@ -6,65 +6,66 @@
 
 A lightweight Python framework for implementing the Command Query Responsibility Segregation (CQRS) pattern with pipeline orchestration capabilities.
 
-## 🚀 Key Features
+## Key Features
 
 - **CQRS Implementation**: Strong separation between Commands (write) and Queries (read).
 - **Mediator Pattern**: Decouple components with a centralized handler registration.
-- **Pipeline Orchestration**: Execute sequences of steps with a shared context and automatic parameter mapping.
-- **Event-Driven Architecture**: Powerful background `EventBus` with Publish/Subscribe support and graceful shutdown.
-- **Type-Safe**: Modern Python type hints with `@overload` support for superior developer experience.
+- **Pipeline Orchestration**: Execute sequences of steps with a shared context, robust output type mapping, and automatic parameter validation.
+- **Event-Driven Architecture**: Powerful background `EventBus` with Publish/Subscribe, subclass event propagation, and graceful shutdown.
+- **Type-Safe**: Modern Python type hints with generic queries and `@overload` support for superior developer experience.
 - **Micro-Framework**: Ultra-lightweight with zero external dependencies in core.
 
-## 📦 Installation
+## Installation
 
 ```bash
 pip install pyline-core
 ```
 
-## 🚥 Quick Start
+## Quick Start
 
-### 1. Define Components
+### 1. Define Components and Register Handlers
+
+Use the `@mediator.register` decorator to map Commands and Queries to their respective Handlers. Define the expected return type for Queries by inheriting from `Query[TResult]`.
 
 ```python
-from pyline import Command, Query, CommandHandler, QueryHandler
+from pyline import Command, Query, CommandHandler, QueryHandler, mediator
 from dataclasses import dataclass
 
 @dataclass
 class CreateUserCommand(Command):
     name: str
 
+@mediator.register(CreateUserCommand)
 class CreateUserCommandHandler(CommandHandler):
     async def handle(self, command: CreateUserCommand) -> None:
         print(f"Creating user: {command.name}")
 
 @dataclass
-class GetUserQuery(Query):
+class GetUserQuery(Query[dict]):
     name: str
 
-class GetUserQueryHandler(QueryHandler):
-    async def handle(self, query: GetUserQuery):
+@mediator.register(GetUserQuery)
+class GetUserQueryHandler(QueryHandler[GetUserQuery, dict]):
+    async def handle(self, query: GetUserQuery) -> dict:
         return {"id": 1, "name": query.name}
 ```
 
-### 2. Register and Execute
+### 2. Execute Messages
 
 ```python
-from pyline import mediator
-
-# Registration
-mediator.register_handler(CreateUserCommand, CreateUserCommandHandler())
-mediator.register_handler(GetUserQuery, GetUserQueryHandler())
-
 # Execution
 async def main():
+    # mediator.send is fully type-safe and returns None for Commands
     await mediator.send(CreateUserCommand(name="Alp"))
+    
+    # mediator.send knows GetUserQuery returns a dict
     user = await mediator.send(GetUserQuery(name="Alp"))
     print(user)
 ```
 
-## 🛠 Advanced: Pipeline Orchestration
+## Advanced: Pipeline Orchestration
 
-Chain multiple commands and queries into a single workflow with shared context:
+Chain multiple commands and queries into a single workflow with shared context. Results from steps (dicts, dataclasses, objects with `__dict__` or `__slots__`) are automatically mapped and merged back into the context:
 
 ```python
 from pyline.pipe import Pipe
@@ -75,12 +76,13 @@ pipe = Pipe(
     steps=[CreateUserCommand, GetUserQuery]
 )
 
+# Throws a descriptive PipelineError if required context parameters are missing
 await pipe.run()
 ```
 
-## 📻 Event-Driven Architecture (Event Bus)
+## Event-Driven Architecture (Event Bus)
 
-PyLine Core includes a lightweight `EventBus` to decouple components and handle side-effects asynchronously without blocking the main execution:
+PyLine Core includes a lightweight `EventBus` supporting subclass propagation to decouple components and handle side-effects asynchronously:
 
 ```python
 from pyline import BaseEvent, EventHandler, EventBus
@@ -92,13 +94,20 @@ class UserCreatedEvent(BaseEvent):
     user_id: int
     name: str
 
+# EmailNotificationHandler listens specifically to UserCreatedEvent
 class EmailNotificationHandler(EventHandler[UserCreatedEvent]):
     async def handle(self, event: UserCreatedEvent) -> None:
         print(f"Sending welcome email to User {event.user_id} ({event.name})")
 
+# GeneralLogger listens to all events inheriting from BaseEvent
+class GeneralLogger(EventHandler[BaseEvent]):
+    async def handle(self, event: BaseEvent) -> None:
+        print(f"Logging event {event.event_id} of type {type(event).__name__}")
+
 async def main():
     bus = EventBus()
     bus.subscribe(UserCreatedEvent, EmailNotificationHandler())
+    bus.subscribe(BaseEvent, GeneralLogger())  # Will also trigger for UserCreatedEvent!
     
     # Publish event (runs in the background)
     bus.publish(UserCreatedEvent(user_id=1, name="Alp"))
@@ -110,14 +119,14 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## 📖 Documentation
+## Documentation
 
 For detailed guides and full API reference, visit our documentation site (coming soon).
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for local development setup and standards.
 
-## 📄 License
+## License
 
 MIT. See [LICENSE](LICENSE) for details.
