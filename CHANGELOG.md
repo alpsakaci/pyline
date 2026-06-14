@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [3.1.0] - 2026-06-14
+### Added
+- Type-safe Generic `Query` and generic `@overload` for `HandlerMediator.send` to preserve return types at compile-time.
+- `@mediator.register` decorator for registering handlers on classes and instances/methods.
+- Robust step result handling in `Pipe` (supports dictionaries, dataclasses, objects with `__dict__` or `__slots__`).
+- Detailed validation for missing required context parameters in `Pipe`, raising a descriptive `PipelineError`.
+- Subclass event listener propagation support in `EventBus` allowing handlers to listen to base event classes.
+
 ### Changed
 - Bumped package version to `3.1.0`.
 
