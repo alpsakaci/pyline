@@ -184,3 +184,26 @@ async def test_event_handler_abc_coverage():
 
     handler = ConcreteHandler()
     await handler.handle(UserCreatedEvent(user_id=7, username="abc"))
+
+
+@pytest.mark.asyncio
+async def test_event_bus_subclass_propagation():
+    from pyline.event_bus import EventBus
+    bus = EventBus()
+    
+    class BaseEventHandler(EventHandler[BaseEvent]):
+        def __init__(self):
+            self.events = []
+        async def handle(self, event: BaseEvent) -> None:
+            self.events.append(event)
+            
+    handler = BaseEventHandler()
+    bus.subscribe(BaseEvent, handler)
+    
+    event = UserCreatedEvent(user_id=8, username="subclass")
+    bus.publish(event)
+    await bus.wait_for_completion()
+    
+    assert len(handler.events) == 1
+    assert handler.events[0] == event
+

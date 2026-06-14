@@ -10,6 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class Pipe(ABC):
     """
     Orchestrates a sequence of Commands and Queries.
@@ -19,7 +20,11 @@ class Pipe(ABC):
     """
 
     def __init__(
-        self, name: str, context: dict[str, Any], steps: list[type[Command | Query]], mediator: HandlerMediator | None = None
+        self,
+        name: str,
+        context: dict[str, Any],
+        steps: list[type[Command | Query[Any]]],
+        mediator: HandlerMediator | None = None,
     ):
         """
         Initializes a new Pipe.
@@ -33,10 +38,10 @@ class Pipe(ABC):
         """
         self.context: dict[str, Any] = context
         self.name: str = name
-        self.steps: list[type[Command | Query]] = steps
+        self.steps: list[type[Command | Query[Any]]] = steps
         self.mediator = mediator or default_mediator
 
-    def context_to_params(self, step: type[Command | Query]) -> dict[str, Any]:
+    def context_to_params(self, step: type[Command | Query[Any]]) -> dict[str, Any]:
         """
         Maps context data to the parameters of a step (dataclass).
 
@@ -47,12 +52,27 @@ class Pipe(ABC):
             dict: A dictionary of parameters extracted from the context.
 
         Raises:
-            PipelineError: If the step is not a dataclass.
+            PipelineError: If the step is not a dataclass or if required parameters are missing.
         """
         if not is_dataclass(step):
             raise PipelineError(f"Step {step.__name__} must be a dataclass")
-            
-        step_keys = [f.name for f in fields(step)]
+
+        from dataclasses import MISSING
+        
+        step_fields = fields(step)
+        missing_keys = [
+            f.name
+            for f in step_fields
+            if f.name not in self.context
+            and f.default is MISSING
+            and f.default_factory is MISSING
+        ]
+        if missing_keys:
+            raise PipelineError(
+                f"Step '{step.__name__}' is missing required parameters in context: {', '.join(missing_keys)}"
+            )
+
+        step_keys = [f.name for f in step_fields]
         params = {key: self.context[key] for key in step_keys if key in self.context}
         return params
 
@@ -62,11 +82,30 @@ class Pipe(ABC):
         
         Logs progress and execution details. Updates context with results from steps.
         """
+        from dataclasses import asdict
+        
         logger.info(f"Running pipe: {self.name}")
         for idx, step in enumerate(self.steps):
             logger.info(f"Running step {idx + 1} of {len(self.steps)}")
             result = await self.mediator.send(step(**self.context_to_params(step)))
             if result is not None:
-                self.context.update(result.__dict__)
+                if isinstance(result, dict):
+                    self.context.update(result)
+                elif is_dataclass(result) and not isinstance(result, type):
+                    self.context.update(asdict(result))
+                elif hasattr(result, "__dict__"):
+                    self.context.update(result.__dict__)
+                elif hasattr(result, "__slots__"):
+                    slots_dict = {
+                        slot: getattr(result, slot)
+                        for slot in result.__slots__
+                        if hasattr(result, slot)
+                    }
+                    self.context.update(slots_dict)
+                else:
+                    raise PipelineError(
+                        f"Step {step.__name__} returned an unsupported result type: {type(result).__name__}. "
+                        "Result must be a dict, dataclass, or object with __dict__ or __slots__."
+                    )
             logger.info(f"Step {idx + 1} completed.")
         logger.info(f"Pipe {self.name} completed.")

@@ -37,6 +37,6 @@ The event bus tracks pending background tasks and provides a `shutdown()` method
 
 PyLine heavily uses Python's typing system. The `mediator.send` method uses `@overload` to provide precise return types:
 - Sending a `Command` returns `None`.
-- Sending a `Query` returns `Any` (or the specific result type if known).
+- Sending a generic `Query[TResult]` returns `TResult`.
 
 This ensures that your IDE can catch potential bugs before you even run the code.
