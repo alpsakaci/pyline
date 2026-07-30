@@ -69,10 +69,27 @@ class GetUserHandler(QueryHandler[GetUserQuery, dict]):
         return {"id": query.user_id}
 ```
 
+### Dependency Injection via Decorator
+
+Dependencies (such as repositories, services, or configurations) can be passed directly into `@mediator.register(...)` as positional or keyword arguments. They will be passed to the handler's constructor:
+
+```python
+user_repo = UserRepository()
+
+@mediator.register(RegisterUserCommand, repository=user_repo)
+class RegisterUserHandler(CommandHandler):
+    def __init__(self, repository: UserRepository):
+        self.repository = repository
+
+    async def handle(self, command: RegisterUserCommand) -> None:
+        await self.repository.save(command.username, command.email)
+```
+
 ### Manual Registration
 
 ```python
-mediator.register_handler(RegisterUserCommand, RegisterUserHandler())
+user_repo = UserRepository()
+mediator.register_handler(RegisterUserCommand, RegisterUserHandler(repository=user_repo))
 mediator.register_handler(GetUserQuery, GetUserHandler())
 ```
 

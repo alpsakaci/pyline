@@ -100,3 +100,54 @@ async def test_register_decorator_non_class(mediator: HandlerMediator):
     assert mediator.handlers[DummyCommand] is handler
 
 
+@pytest.mark.asyncio
+async def test_register_decorator_with_dependency_kwargs(mediator: HandlerMediator):
+    class MockRepository:
+        def __init__(self):
+            self.saved_data = []
+
+        def save(self, data: str):
+            self.saved_data.append(data)
+
+    repo = MockRepository()
+
+    @mediator.register(DummyCommand, repository=repo)
+    class InjectableHandler(CommandHandler):
+        def __init__(self, repository: MockRepository):
+            self.repository = repository
+
+        async def handle(self, command: DummyCommand) -> None:
+            self.repository.save(command.data)
+
+    cmd = DummyCommand(data="repo_test")
+    await mediator.send(cmd)
+
+    assert repo.saved_data == ["repo_test"]
+
+
+@pytest.mark.asyncio
+async def test_register_decorator_with_dependency_args(mediator: HandlerMediator):
+    class MockRepository:
+        def __init__(self):
+            self.saved_data = []
+
+        def save(self, data: str):
+            self.saved_data.append(data)
+
+    repo = MockRepository()
+
+    @mediator.register(DummyCommand, repo)
+    class InjectableHandler(CommandHandler):
+        def __init__(self, repository: MockRepository):
+            self.repository = repository
+
+        async def handle(self, command: DummyCommand) -> None:
+            self.repository.save(command.data)
+
+    cmd = DummyCommand(data="positional_test")
+    await mediator.send(cmd)
+
+    assert repo.saved_data == ["positional_test"]
+
+
+

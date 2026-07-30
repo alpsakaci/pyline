@@ -29,19 +29,21 @@ class HandlerMediator:
         """
         self.handlers[component] = handler
 
-    def register(self, component: type[Command | Query[Any]]) -> Any:
+    def register(self, component: type[Command | Query[Any]], *args: Any, **kwargs: Any) -> Any:
         """
         A decorator to register a handler for a specific command or query type.
 
         Args:
             component (type[Command | Query]): The class of the command or query.
+            *args: Positional arguments to pass to the handler constructor.
+            **kwargs: Keyword arguments to pass to the handler constructor.
 
         Returns:
             A decorator function that registers the handler.
         """
         def decorator(handler: Any) -> Any:
             if isinstance(handler, type):
-                instance = handler()
+                instance = handler(*args, **kwargs)
                 self.register_handler(component, instance)
             else:
                 self.register_handler(component, handler)
