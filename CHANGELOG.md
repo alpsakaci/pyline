@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.0] - 2026-07-30
+### Added
+- Dependency injection support in `@mediator.register(*args, **kwargs)` decorator, allowing arguments to be passed directly to handler constructors during registration.
+
+### Changed
+- Bumped package version to `3.2.0`.
+
 ## [3.1.0] - 2026-06-14
 ### Added
 - Type-safe Generic `Query` and generic `@overload` for `HandlerMediator.send` to preserve return types at compile-time.
